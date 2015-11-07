@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2015 Marius L. Jøhndal
+# Copyright (c) 2015-2016 Marius L. Jøhndal
 #
 # See LICENSE in the top-level source directory for licensing terms.
 #++
@@ -15,11 +15,28 @@ module PROIEL
         attribute :relation, required: true
       end
 
+      # Parsing class for `semantic-tag` elements.
+      class SemanticTag
+        include SAXMachine
+
+        attribute :attribute, required: true
+        attribute :value, required: true
+      end
+
+      # Parsing class for `note` elements.
+      class Note
+        include SAXMachine
+
+        attribute :originator, required: true
+        value :content
+      end
+
       # Parsing class for `token` elements.
       class Token
         include SAXMachine
 
         attribute :id, class: Integer, required: true
+        attribute :'alignment-id', as: :alignment_id, class: Integer, required: false
         attribute :'head-id', as: :head_id, class: Integer
         attribute :form
         attribute :lemma
@@ -36,6 +53,8 @@ module PROIEL
         attribute :'foreign-ids', as: :foreign_ids
 
         elements :slash, as: :slashes, class: Slash
+        elements :'semantic-tag', as: :semantic_tags, class: SemanticTag
+        elements :note, as: :notes, class: Note
       end
 
       # Parsing class for `sentence` elements.
@@ -43,23 +62,27 @@ module PROIEL
         include SAXMachine
 
         attribute :id, class: Integer, required: true
+        attribute :'alignment-id', as: :alignment_id, class: Integer, required: false
         attribute :status, class: Symbol, default: :unannotated
         attribute :'presentation-before', as: :presentation_before
         attribute :'presentation-after', as: :presentation_after
 
         elements :token, as: :tokens, class: Token
+        elements :note, as: :notes, class: Note
       end
 
       # Parsing class for `div` elements.
       class Div
         include SAXMachine
 
-        attribute :id
+        attribute :id, class: Integer, required: false
+        attribute :'alignment-id', as: :alignment_id, class: Integer, required: false
         attribute :'presentation-before', as: :presentation_before
         attribute :'presentation-after', as: :presentation_after
 
         element :title
         elements :sentence, as: :sentences, class: Sentence
+        elements :note, as: :notes, class: Note
       end
 
       # Parsing class for `source` elements.
@@ -67,6 +90,7 @@ module PROIEL
         include SAXMachine
 
         attribute :id, required: true
+        attribute :'alignment-id', as: :alignment_id, class: Integer, required: false
         attribute :language, required: true
 
         element :title
@@ -99,7 +123,9 @@ module PROIEL
         element :printed_text_publisher
         element :printed_text_place
         element :printed_text_date
+
         elements :div, as: :divs, class: Div
+        elements :note, as: :notes, class: Note
       end
 
       # Parsing class for `relations/value` elements.
@@ -166,6 +192,25 @@ module PROIEL
         attribute :summary, required: true
       end
 
+      # Parsing class for `lemma` elements.
+      class Lemma
+        include SAXMachine
+
+        attribute :form, required: true
+        attribute :'part-of-speech', as: :part_of_speech, required: true
+        attribute :gloss, required: false
+
+        elements :'semantic-tag', as: :semantic_tags, class: SemanticTag
+        elements :note, as: :notes, class: Note
+      end
+
+      # Parsing class for `dictionary` elements.
+      class Dictionary
+        include SAXMachine
+
+        elements :lemma, as: :lemmas, class: Lemma
+      end
+
       # Parsing class for `information_statuses` elements.
       class InformationStatuses
         include SAXMachine
@@ -181,6 +226,7 @@ module PROIEL
         element :parts_of_speech, as: :parts_of_speech, class: PartsOfSpeech
         element :morphology, class: Morphology
         element :information_statuses, as: :information_statuses, class: InformationStatuses
+        element :dictionary, as: :dictionary, class: Dictionary
       end
 
       # Parsing class for `proiel` elements.
